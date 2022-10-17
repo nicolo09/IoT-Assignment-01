@@ -7,11 +7,10 @@
 #define INTERRUPT_MODE FALLING
 #define EI_ARDUINO_INTERRUPTED_PIN
 
+
 // FIXME: Debounce button on selecting pattern
-// FIXME: Test difficulty levels
 // TODO: Change go to sleep to timerone
 // TODO: Separate in more files
-// TODO: Wake up arduino on any button press
 // TODO: Change penalty blink on press button during pattern showing
 // FIXME: Fix bug game immediately starts after wake up
 
@@ -99,12 +98,14 @@ void start_game()
 }
 
 /*ISR called on arduino waking up*/
-void wake_up_function()
+void wake_up_function_ISR()
 {
     Serial.println("Waking up");
     time = millis();
-    disableInterrupt(buttonPin[0]);
-    wait_for_button_release(buttonPin[0]);
+    for(int i = 0; i < ledCount; i++){
+      detach_button_interrupt(i);
+    }
+    wait_for_button_release(findIndex(arduinoInterruptedPin, buttonPin, ledCount));
     enableInterrupt(buttonPin[0], start_game_ISR, FALLING);
 }
 
@@ -115,11 +116,17 @@ void go_to_sleep()
     digitalWrite(redLedPin, LOW);
     Serial.println("Sleeping...");
     Serial.flush();
-    enableInterrupt(pinToWakeUp, wake_up_function, INTERRUPT_MODE);
+    for(int i = 0; i < ledCount; i++){
+      attach_wake_up_interrupt(i);
+    }
     set_sleep_mode(SLEEP_MODE_PWR_DOWN);
     sleep_enable();
     sleep_mode();
     sleep_disable();
+}
+
+void attach_wake_up_interrupt(const int index){
+  enableInterrupt(buttonPin[index],wake_up_function_ISR,INTERRUPT_MODE);
 }
 
 void start_game_ISR()
