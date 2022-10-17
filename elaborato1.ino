@@ -8,10 +8,8 @@
 #define EI_ARDUINO_INTERRUPTED_PIN
 
 // TODO: Debounce button on selecting pattern
-// FIXME: Test difficulty levels
 // TODO: Change go to sleep to timerone
 // TODO: Separate in more files
-// TODO: Wake up arduino on any button press
 
 // Status
 #define WAITING_FOR_START 0
