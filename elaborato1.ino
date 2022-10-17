@@ -9,9 +9,10 @@ pull-ups hence buttons are placed in inverted logic, we use falling interrupts*/
 
 #include <EnableInterrupt.h>
 #include <avr/sleep.h>
+
+#include "Constants.h"
 #include "LedButtonUtils.h"
 #include "PatternUtils.h"
-#include "Constants.h"
 
 double difficultyFactor;
 volatile int status;
@@ -43,7 +44,9 @@ void start_game()
 /*ISR called on arduino waking up from deep sleep*/
 void wake_up_function_ISR()
 {
-    Serial.println("I'm waking up");
+#ifdef DEBUG
+    Serial.println("[DEBUG]: I'm waking up");
+#endif
     time = millis();
     for (int i = 0; i < ledCount; i++) {
         detach_button_interrupt(i);
@@ -57,8 +60,10 @@ void go_to_sleep()
 {
     leds_off(ledPin, ledCount);
     digitalWrite(redLedPin, LOW);
-    Serial.println("Sleeping...");
+#ifdef DEBUG
+    Serial.println("[DEBUG]: Sleeping...");
     Serial.flush();
+#endif
     for (int i = 0; i < ledCount; i++) {
         attach_wake_up_interrupt(i);
     }
@@ -148,7 +153,6 @@ void attach_penalty_interrupts()
         enableInterrupt(buttonPin[i], penalty_ISR, INTERRUPT_MODE);
     }
 }
-
 
 void setup()
 {
