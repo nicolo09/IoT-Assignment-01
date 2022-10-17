@@ -13,6 +13,7 @@ void change_led_state(const int ledIndex, const int* ledPin, int *inputPattern);
 /*Sets LEDs HIGH or LOW according to values in pattern*/
 void set_leds(const int *pattern, const int *ledPins, const int ledCount);
 
+/*Waits for a button to be released*/
 void wait_for_button_release(int pin);
 
 #endif // LED_BUTTON_UTILS_H
