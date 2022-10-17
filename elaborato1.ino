@@ -2,9 +2,11 @@
 pull-ups hence buttons are placed in inverted logic, we use falling interrupts*/
 #define INTERRUPT_MODE FALLING
 
+/* Part of EnableInterrupt library, enable the possibility to retrieve the pin on
+which the interrupt was raised */
 #define EI_ARDUINO_INTERRUPTED_PIN
 
-/*Uncomment to show some debug prints on serial line*/
+/*Uncomment this to show some debug prints on serial line*/
 //#define DEBUG
 
 #include <EnableInterrupt.h>
@@ -14,14 +16,26 @@ pull-ups hence buttons are placed in inverted logic, we use falling interrupts*/
 #include "LedButtonUtils.h"
 #include "PatternUtils.h"
 
+/*The factor t2 and t3 gets multiplied to every step*/
 double difficultyFactor;
+
+/*The current state of the game finite state machine*/
 volatile int status;
+
+/*Game points*/
 int score;
 volatile int penalties;
+
+/*Game times, gets shorter as the game goes on*/
 long t2;
 long t3;
 volatile long time = 0;
+
+/*Button debounce times during pattern input*/
 volatile long timePress[ledCount];
+
+/*Global variable to store the input pattern*/
+int inputPattern[ledCount];
 
 /*Setup function called on game starting*/
 void start_game()
@@ -101,9 +115,6 @@ void set_initial_status()
     status = WAITING_FOR_START;
 }
 
-/*Global variable to store the input pattern*/
-int inputPattern[ledCount];
-
 /*ISR for handling button press during pattern input*/
 void buttons_input_ISR()
 {
@@ -171,8 +182,10 @@ void loop()
 {
     switch (status) {
         case WAITING_FOR_START:
+            // Keeps fading while waiting for start
             leds_off(ledPin, ledCount);
             fade_next_step(redLedPin);
+            // If the game is not started after a while, go to sleep
             if (millis() - time > 10000) {
                 go_to_sleep();
             }
@@ -192,6 +205,7 @@ void loop()
             status = PLAYING_SHOW_PATTERN;
             break;
         case PLAYING_SHOW_PATTERN:
+            // Show pattern for t2 milliseconds
             if (millis() - time > t2) {
                 detach_penalty_interrupts();
                 leds_off(ledPin, ledCount);
@@ -199,10 +213,11 @@ void loop()
             }
             break;
         case PLAYING_INPUT_PATTERN:
+            // Reset input pattern
             for (int i = 0; i < ledCount; i++) {
                 inputPattern[i] = LOW;
             }
-            // Attach interrupt to buttons
+            // Attach interrupt to buttons and wait for t3 milliseconds
             for (int i = 0; i < ledCount; i++) {
                 set_button_input_interrupt(i);
             }
@@ -213,6 +228,7 @@ void loop()
             status = TIME_OVER;
             break;
         case TIME_OVER:
+            // Check if the input pattern is correct
             if (patternCmp(pattern, inputPattern, ledCount)) {
                 score++;
                 t2 *= difficultyFactor;
@@ -227,12 +243,14 @@ void loop()
             }
             break;
         case GIVE_PENALTY:
+            // Gives a penalty to the player
             leds_off(ledPin, ledCount);
             penalties++;
             Serial.println("Penalty!");
             digitalWrite(redLedPin, HIGH);
             delay(1000);
             digitalWrite(redLedPin, LOW);
+            // If the player has reached the maximum number of penalties, the game is over
             if (penalties >= 3) {
                 Serial.print("Game Over. Final Score: ");
                 Serial.println(score);
