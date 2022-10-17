@@ -1,7 +1,6 @@
 #define DEBUG
 
 #define BAUD_RATE 9600
-#define MAX_FADE 255
 #define MAX_ANALOG 1023
 #define SLEEP_TIMEOUT 10000000
 #define INTERRUPT_MODE FALLING
@@ -29,6 +28,7 @@ const int PLAYING_INPUT_PATTERN = 6;
 
 #include <EnableInterrupt.h>
 #include <avr/sleep.h>
+#include "LedUtils.h"
 
 const int buttonPin[] = {2, 9, 10, 11};
 const int ledPin[] = {7, 6, 5, 4};
@@ -48,34 +48,6 @@ long t3;
 volatile long time = 0;
 volatile bool penalizedDuringPattern;
 volatile long timePress[ledCount];
-
-/*Turns off the green LEDs*/
-void leds_off(const int *ledPins, const int ledCount)
-{
-    for (int i = 0; i < ledCount; i++) {
-        digitalWrite(ledPins[i], LOW);
-    }
-}
-
-/*Does a fade-in-fade-out cycle step*/
-void fade_next_step(const int redLedPin)
-{
-    static bool increasing = true;
-    static int fadeValue = 0;
-    if (increasing) {
-        analogWrite(redLedPin, fadeValue++);
-    }
-    else {
-        analogWrite(redLedPin, fadeValue--);
-    }
-    if (fadeValue == MAX_FADE) {
-        increasing = false;
-    }
-    else if (fadeValue == 0) {
-        increasing = true;
-    }
-    delay(10);
-}
 
 /*Setup function called on game starting*/
 void start_game()
@@ -168,13 +140,6 @@ void setup()
 /*Global variable to store the input pattern*/
 int inputPattern[ledCount];
 
-/*Changes an LED state (changes are reflected in inputPattern array)*/
-void change_led_state(const int ledIndex, int *inputPattern)
-{
-    inputPattern[ledIndex] == LOW ? inputPattern[ledIndex] = HIGH : inputPattern[ledIndex] = LOW;
-    digitalWrite(ledPin[ledIndex], inputPattern[ledIndex]);
-}
-
 void wait_for_button_release(int buttonIndex)
 {
     while (digitalRead(buttonPin[buttonIndex]) == LOW) {
@@ -182,10 +147,10 @@ void wait_for_button_release(int buttonIndex)
 }
 
 /*Finds zero-based index of an element in an array*/
-int findIndex(const int pin, const int *array, const int length)
+int findIndex(const int element, const int *array, const int length)
 {
     for (int i = 0; i < length; i++) {
-        if (pin == array[i]) {
+        if (element == array[i]) {
             return i;
         }
     }
@@ -197,7 +162,7 @@ void buttons_input_ISR()
 {
     int index = findIndex(arduinoInterruptedPin, buttonPin, ledCount);
     if (millis() - timePress[index] > DEBOUNCE_TIME) {
-        change_led_state(index, inputPattern);
+        change_led_state(index, ledPin, inputPattern);
         // wait_for_button_release(index);
     }
 #ifdef DEBUG
@@ -230,14 +195,6 @@ void randomize_pattern(int *pattern)
             pattern[i] = random(0, 2) == 0 ? LOW : HIGH;
         }
     } while (0 == memcmp(pattern, badPattern, ledCount * sizeof(pattern[0])));
-}
-
-/*Sets LEDs HIGH or LOW according to values in pattern*/
-void set_leds(const int *pattern, const int *ledPins, const int ledCount)
-{
-    for (int i = 0; i < ledCount; i++) {
-        digitalWrite(ledPins[i], pattern[i]);
-    }
 }
 
 void penalty_ISR()
