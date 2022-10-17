@@ -7,10 +7,8 @@
 #define INTERRUPT_MODE FALLING
 #define EI_ARDUINO_INTERRUPTED_PIN
 
-// FIXME: Debounce button on selecting pattern
 // TODO: Change go to sleep to timerone
 // TODO: Separate in more files
-// FIXME: Fix bug game immediately starts after wake up
 
 // Status
 const int WAITING_FOR_START = 0;
@@ -27,7 +25,7 @@ const int PLAYING_INPUT_PATTERN = 6;
 #define T1_MAX 4000
 #define T2_START 4000
 #define T3_START 6000
-#define DEBOUNCE_TIME 150
+#define DEBOUNCE_TIME 160
 
 #include <EnableInterrupt.h>
 #include <avr/sleep.h>
@@ -47,7 +45,7 @@ int score;
 volatile int penalties;
 long t2;
 long t3;
-volatile long time;
+volatile long time = 0;
 volatile bool penalizedDuringPattern;
 volatile long timePress[ledCount];
 
@@ -98,10 +96,10 @@ void start_game()
     status = PLAYING_GENERATE_PATTERN;
 }
 
-/*ISR called on arduino waking up*/
+/*ISR called on arduino waking up from deep sleep*/
 void wake_up_function_ISR()
 {
-    Serial.println("Waking up");
+    Serial.println("I'm waking up");
     time = millis();
     for (int i = 0; i < ledCount; i++) {
         detach_button_interrupt(i);
@@ -133,9 +131,11 @@ void attach_wake_up_interrupt(const int index)
 
 void start_game_ISR()
 {
-    start_game();
-    wait_for_button_release(findIndex(arduinoInterruptedPin, buttonPin, ledCount));
-    disableInterrupt(arduinoInterruptedPin);
+    if (millis() - time > DEBOUNCE_TIME) {
+        start_game();
+        wait_for_button_release(findIndex(arduinoInterruptedPin, buttonPin, ledCount));
+        disableInterrupt(arduinoInterruptedPin);
+    }
 }
 
 /*Setup the initial waiting status*/
