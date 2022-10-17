@@ -10,12 +10,10 @@
 // FIXME: Debounce button on selecting pattern
 // TODO: Change go to sleep to timerone
 // TODO: Separate in more files
-// TODO: Change penalty blink on press button during pattern showing
 // FIXME: Fix bug game immediately starts after wake up
 
 // Status
 const int WAITING_FOR_START = 0;
-const int PLAYING = 1;
 const int TIME_OVER = 2;
 const int GIVE_PENALTY = 3;
 const int PLAYING_SHOW_PATTERN = 4;
@@ -97,7 +95,7 @@ void start_game()
 #endif
     t2 = T2_START;
     t3 = T3_START;
-    status = PLAYING;
+    status = PLAYING_GENERATE_PATTERN;
 }
 
 /*ISR called on arduino waking up*/
@@ -289,6 +287,7 @@ void loop()
         case PLAYING_SHOW_PATTERN:
             if (millis() - time > t2) {
                 detachPenaltyInterrupts();
+                leds_off(ledPin, ledCount);
                 status = PLAYING_INPUT_PATTERN;
             }
             break;
@@ -313,7 +312,7 @@ void loop()
                 t3 *= difficultyFactor;
                 Serial.print("New point! Score: ");
                 Serial.println(score);
-                status = PLAYING;
+                status = PLAYING_GENERATE_PATTERN;
             }
             else {
                 Serial.println("Time over! Wrong pattern!");
@@ -333,7 +332,7 @@ void loop()
                 set_initial_status();
             }
             else {
-                status = PLAYING;
+                status = PLAYING_GENERATE_PATTERN;
             }
             break;
         default:
