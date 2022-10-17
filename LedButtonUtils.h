@@ -1,5 +1,5 @@
-#ifndef LEDUTILS_H
-#define LEDUTILS_H
+#ifndef LED_BUTTON_UTILS_H
+#define LED_BUTTON_UTILS_H
 
 /*Turns off all the LEDs in the ledPins array*/
 void leds_off(const int *ledPins, const int ledCount);
@@ -13,4 +13,6 @@ void change_led_state(const int ledIndex, const int* ledPin, int *inputPattern);
 /*Sets LEDs HIGH or LOW according to values in pattern*/
 void set_leds(const int *pattern, const int *ledPins, const int ledCount);
 
-#endif
+void wait_for_button_release(int pin);
+
+#endif // LED_BUTTON_UTILS_H

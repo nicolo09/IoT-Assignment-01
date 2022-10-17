@@ -40,3 +40,9 @@ void set_leds(const int *pattern, const int *ledPins, const int ledCount)
         digitalWrite(ledPins[i], pattern[i]);
     }
 }
+
+void wait_for_button_release(int pin)
+{
+    while (digitalRead(pin) == LOW) {
+    }
+}
