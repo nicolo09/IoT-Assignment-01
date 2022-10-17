@@ -70,11 +70,13 @@ void go_to_sleep()
     sleep_disable();
 }
 
+/*Attach the wake up interrupt to a button*/
 void attach_wake_up_interrupt(const int index)
 {
     enableInterrupt(buttonPin[index], wake_up_function_ISR, INTERRUPT_MODE);
 }
 
+/*ISR triggered on T1 press to start game from initial status*/
 void start_game_ISR()
 {
     if (millis() - time > DEBOUNCE_TIME) {
@@ -99,8 +101,6 @@ void set_initial_status()
 /*Global variable to store the input pattern*/
 int inputPattern[ledCount];
 
-
-
 /*ISR for handling button press during pattern input*/
 void buttons_input_ISR()
 {
@@ -117,8 +117,8 @@ void buttons_input_ISR()
     timePress[index] = millis();
 }
 
-/*Sets each button interrupt to the corresponding ISR during pattern input*/
-void set_button_interrupt(int index)
+/*Setup button interrupt for pattern input*/
+void set_button_input_interrupt(int index)
 {
     enableInterrupt(buttonPin[index], buttons_input_ISR, INTERRUPT_MODE);
 }
@@ -129,25 +129,28 @@ void detach_button_interrupt(int index)
     disableInterrupt(buttonPin[index]);
 }
 
+/*Remove all interrupts from the buttons*/
+void detach_penalty_interrupts()
+{
+    for (int i = 0; i < ledCount; i++) {
+        detach_button_interrupt(i);
+    }
+}
+
 /*ISR called on button press during pattern showing*/
 void penalty_ISR()
 {
     status = GIVE_PENALTY;
 }
 
-void attachPenaltyInterrupts()
+/*Attach interrupts that gives penalties to all the buttons*/
+void attach_penalty_interrupts()
 {
     for (int i = 0; i < ledCount; i++) {
         enableInterrupt(buttonPin[i], penalty_ISR, INTERRUPT_MODE);
     }
 }
 
-void detachPenaltyInterrupts()
-{
-    for (int i = 0; i < ledCount; i++) {
-        disableInterrupt(buttonPin[i]);
-    }
-}
 
 void setup()
 {
@@ -182,13 +185,13 @@ void loop()
             randomize_pattern(pattern, ledCount);
             // Turn on leds according to pattern
             set_leds(pattern, ledPin, ledCount);
-            attachPenaltyInterrupts();
+            attach_penalty_interrupts();
             time = millis();
             status = PLAYING_SHOW_PATTERN;
             break;
         case PLAYING_SHOW_PATTERN:
             if (millis() - time > t2) {
-                detachPenaltyInterrupts();
+                detach_penalty_interrupts();
                 leds_off(ledPin, ledCount);
                 status = PLAYING_INPUT_PATTERN;
             }
@@ -199,7 +202,7 @@ void loop()
             }
             // Attach interrupt to buttons
             for (int i = 0; i < ledCount; i++) {
-                set_button_interrupt(i);
+                set_button_input_interrupt(i);
             }
             delay(t3);
             for (int i = 0; i < ledCount; i++) {
