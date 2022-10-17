@@ -1,5 +1,5 @@
 /* Defines the interrupt mode through the entire sketch, since we use input
-pull-ups hence buttons are placed in inverted logic, we use falling interrupts*/
+pull-ups hence buttons are placed in inverted logic, we use falling interrupts */
 #define INTERRUPT_MODE FALLING
 
 /* Part of EnableInterrupt library, enable the possibility to retrieve the pin on
