@@ -7,7 +7,6 @@
 #define INTERRUPT_MODE FALLING
 #define EI_ARDUINO_INTERRUPTED_PIN
 
-
 // FIXME: Debounce button on selecting pattern
 // TODO: Change go to sleep to timerone
 // TODO: Separate in more files
@@ -15,9 +14,13 @@
 // FIXME: Fix bug game immediately starts after wake up
 
 // Status
-#define WAITING_FOR_START 0
-#define PLAYING 1
-#define TIME_OVER 2
+const int WAITING_FOR_START = 0;
+const int PLAYING = 1;
+const int TIME_OVER = 2;
+const int GIVE_PENALTY = 3;
+const int PLAYING_SHOW_PATTERN = 4;
+const int PLAYING_GENERATE_PATTERN = 5;
+const int PLAYING_INPUT_PATTERN = 6;
 
 #define UNCONNECTED_ANALOG_PIN A5
 
@@ -102,8 +105,8 @@ void wake_up_function_ISR()
 {
     Serial.println("Waking up");
     time = millis();
-    for(int i = 0; i < ledCount; i++){
-      detach_button_interrupt(i);
+    for (int i = 0; i < ledCount; i++) {
+        detach_button_interrupt(i);
     }
     wait_for_button_release(findIndex(arduinoInterruptedPin, buttonPin, ledCount));
     enableInterrupt(buttonPin[0], start_game_ISR, FALLING);
@@ -116,8 +119,8 @@ void go_to_sleep()
     digitalWrite(redLedPin, LOW);
     Serial.println("Sleeping...");
     Serial.flush();
-    for(int i = 0; i < ledCount; i++){
-      attach_wake_up_interrupt(i);
+    for (int i = 0; i < ledCount; i++) {
+        attach_wake_up_interrupt(i);
     }
     set_sleep_mode(SLEEP_MODE_PWR_DOWN);
     sleep_enable();
@@ -125,8 +128,9 @@ void go_to_sleep()
     sleep_disable();
 }
 
-void attach_wake_up_interrupt(const int index){
-  enableInterrupt(buttonPin[index],wake_up_function_ISR,INTERRUPT_MODE);
+void attach_wake_up_interrupt(const int index)
+{
+    enableInterrupt(buttonPin[index], wake_up_function_ISR, INTERRUPT_MODE);
 }
 
 void start_game_ISR()
@@ -196,7 +200,7 @@ void buttons_input_ISR()
     int index = findIndex(arduinoInterruptedPin, buttonPin, ledCount);
     if (millis() - timePress[index] > DEBOUNCE_TIME) {
         change_led_state(index, inputPattern);
-        //wait_for_button_release(index);
+        // wait_for_button_release(index);
     }
 #ifdef DEBUG
     else {
@@ -238,29 +242,9 @@ void set_leds(const int *pattern, const int *ledPins, const int ledCount)
     }
 }
 
-void give_penalty()
-{
-    penalties++;
-    Serial.println("Penalty!");
-    digitalWrite(redLedPin, HIGH);
-    delay(1000);
-    digitalWrite(redLedPin, LOW);
-    if (penalties >= 3) {
-        Serial.print("Game Over. Final Score: ");
-        Serial.println(score);
-        set_initial_status();
-    }
-    else {
-        status = PLAYING;
-    }
-}
-
 void penalty_ISR()
 {
-    penalizedDuringPattern = true;
-    detachPenaltyInterrupts();
-    give_penalty();
-    wait_for_button_release(findIndex(arduinoInterruptedPin, buttonPin, ledCount));
+    status = GIVE_PENALTY;
 }
 
 void attachPenaltyInterrupts()
@@ -287,7 +271,7 @@ void loop()
                 go_to_sleep();
             }
             break;
-        case PLAYING:
+        case PLAYING_GENERATE_PATTERN:
             digitalWrite(redLedPin, LOW);
             // Led off for random time
             leds_off(ledPin, ledCount);
@@ -299,26 +283,28 @@ void loop()
             set_leds(pattern, ledPin, ledCount);
             penalizedDuringPattern = false;
             attachPenaltyInterrupts();
-            delay(t2);
-            detachPenaltyInterrupts();
-            // Turn off leds
-            leds_off(ledPin, ledCount);
-            if (penalizedDuringPattern) {
+            time = millis();
+            status = PLAYING_SHOW_PATTERN;
+            break;
+        case PLAYING_SHOW_PATTERN:
+            if (millis() - time > t2) {
+                detachPenaltyInterrupts();
+                status = PLAYING_INPUT_PATTERN;
             }
-            else {
-                for (int i = 0; i < ledCount; i++) {
-                    inputPattern[i] = LOW;
-                }
-                // Attach interrupt to buttons
-                for (int i = 0; i < ledCount; i++) {
-                    set_button_interrupt(i);
-                }
-                delay(t3);
-                for (int i = 0; i < ledCount; i++) {
-                    detach_button_interrupt(i);
-                }
-                status = TIME_OVER;
+            break;
+        case PLAYING_INPUT_PATTERN:
+            for (int i = 0; i < ledCount; i++) {
+                inputPattern[i] = LOW;
             }
+            // Attach interrupt to buttons
+            for (int i = 0; i < ledCount; i++) {
+                set_button_interrupt(i);
+            }
+            delay(t3);
+            for (int i = 0; i < ledCount; i++) {
+                detach_button_interrupt(i);
+            }
+            status = TIME_OVER;
             break;
         case TIME_OVER:
             if (0 == memcmp(pattern, inputPattern, ledCount * sizeof(pattern[0]))) {
@@ -331,7 +317,23 @@ void loop()
             }
             else {
                 Serial.println("Time over! Wrong pattern!");
-                give_penalty();
+                status = GIVE_PENALTY;
+            }
+            break;
+        case GIVE_PENALTY:
+            leds_off(ledPin, ledCount);
+            penalties++;
+            Serial.println("Penalty!");
+            digitalWrite(redLedPin, HIGH);
+            delay(1000);
+            digitalWrite(redLedPin, LOW);
+            if (penalties >= 3) {
+                Serial.print("Game Over. Final Score: ");
+                Serial.println(score);
+                set_initial_status();
+            }
+            else {
+                status = PLAYING;
             }
             break;
         default:
