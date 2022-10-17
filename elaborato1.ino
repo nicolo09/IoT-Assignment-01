@@ -13,9 +13,7 @@ pull-ups hence buttons are placed in inverted logic, we use falling interrupts*/
 #include "PatternUtils.h"
 #include "Constants.h"
 
-const int SLEEP_TIMEOUT = 10000000;
 double difficultyFactor;
-
 volatile int status;
 int score;
 volatile int penalties;

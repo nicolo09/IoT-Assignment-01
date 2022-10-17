@@ -1,3 +1,5 @@
+#include <Arduino.h>
+
 static const int MAX_FADE = 255;
 
 void leds_off(const int *ledPins, const int ledCount)

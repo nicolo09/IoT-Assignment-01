@@ -27,6 +27,7 @@ const int T1_MIN = 1000;
 const int T1_MAX = 4000;
 const int T2_START = 4000;
 const int T3_START = 6000;
+const long SLEEP_TIMEOUT = 10000000;
 
 // Game settings
 const double difficulties[] = {0.9, 0.8, 0.7, 0.6};
