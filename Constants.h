@@ -8,7 +8,7 @@ const int DEBOUNCE_TIME = 160;
 
 // Pins
 const int buttonPin[] = {2, 9, 10, 11};
-const int ledPin[] = {7, 6, 5, 4};
+const int ledPin[] = {4, 5, 6, 7};
 const int ledCount = sizeof(ledPin) / sizeof(ledPin[0]);
 const int redLedPin = 3;
 const int potPin = A2;
