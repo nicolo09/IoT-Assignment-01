@@ -254,6 +254,7 @@ void loop()
             if (penalties >= 3) {
                 Serial.print("Game Over. Final Score: ");
                 Serial.println(score);
+                delay(GAME_OVER_TIMEOUT);
                 set_initial_status();
             }
             else {
