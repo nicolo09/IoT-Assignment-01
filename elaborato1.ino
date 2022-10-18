@@ -155,6 +155,7 @@ void detach_penalty_interrupts()
 void penalty_ISR()
 {
     status = GIVE_PENALTY;
+    detach_penalty_interrupts();
 }
 
 /*Attach interrupts that gives penalties to all the buttons*/
