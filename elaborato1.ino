@@ -1,3 +1,17 @@
+/*********************************************************
+*                     Assignment-01                      *
+*                                                        *
+*     Authors:                                           *
+*        -Casadei Filippo                                *
+*             Matricola->0000971563                      *
+*             email->filippo.casadei9@studio.unibo.it    *
+*                                                        *
+*        -Guerra Nicolò                                  *
+*             Matricola->0000971562                      *
+*             email->nicolo.guerra@studio.unibo.it       *
+*                                                        *
+**********************************************************/
+
 /* Defines the interrupt mode through the entire sketch, since we use input
 pull-ups hence buttons are placed in inverted logic, we use falling interrupts */
 #define INTERRUPT_MODE FALLING
